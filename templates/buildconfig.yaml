@@ -1,5 +1,4 @@
-{{- if .Values.buildconfig }}
-kind: BuildConfig
-apiVersion: v1
-
-{{- end }}
+# {{- if .Values.buildconfig }}
+# kind: BuildConfig
+# apiVersion: v1
+# {{- end }}

@@ -30,10 +30,10 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- if .Values.deployment.env }}
           env:
-          {{- end }}
-          {{- range $key := .Values.deployment.env_vars }}
-          {{- if .value }}
+            {{- toYaml .Values.deployment.env | nindent 12 }}
+          {{- end}}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
