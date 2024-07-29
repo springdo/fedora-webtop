@@ -1,0 +1,84 @@
+FROM docker.io/linuxserver/webtop:fedora-xfce
+
+USER root
+
+# update the os rpms
+# RUN dnf upgrade -y
+
+# K6s
+RUN dnf install -y https://dl.k6.io/rpm/repo.rpm
+
+# install some stuffs 
+RUN dnf install -y k6 flatpak git tree wget iputils net-tools vim unzip zip zsh java-17-openjdk java-17-openjdk-devel java-17-openjdk-headless
+
+# install vscode
+ADD vscode.repo /etc/yum.repos.d/
+RUN rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
+    dnf check-update || rc=$? && \
+    dnf install -y code
+
+# 🧰 generic tools copied from here cuz of laziness
+# https://github.com/redhat-cop/containers-quickstarts/blob/main/tool-box/Dockerfile
+
+# renovate: datasource=repology depName=homebrew/openshift-cli
+ARG OC_VERSION=4.16.0
+# renovate: datasource=github-releases depName=openshift/rosa
+ARG ROSA_VERSION=v1.2.41
+# renovate: datasource=github-releases depName=redhat-developer/odo
+ARG ODO_VERSION=v3.16.1
+# renovate: datasource=github-releases depName=stedolan/jq
+ARG JQ_VERSION=1.6
+# renovate: datasource=github-releases depName=helm/helm
+ARG HELM_VERSION=v3.15.2
+# renovate: datasource=github-releases depName=tektoncd/cli
+ARG TEKTON_VERSION=v0.37.0
+# renovate: datasource=github-releases depName=mikefarah/yq
+ARG YQ_VERSION=4.44.2
+
+ARG KUBESEAL_VERSION=0.27.1
+
+RUN curl -L "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OC_VERSION}/openshift-client-linux.tar.gz" -o /tmp/openshift-client-linux.tar.gz && \
+    tar --no-same-owner -xzf /tmp/openshift-client-linux.tar.gz && \
+    mv oc kubectl /usr/local/bin && \
+    oc version --client && \
+    kubectl version --client
+
+RUN curl -L "https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/rosa/${ROSA_VERSION//v}/rosa-linux.tar.gz" -o /tmp/rosa-linux.tar.gz && \
+    tar --no-same-owner -xzf /tmp/rosa-linux.tar.gz && \
+    mv rosa /usr/local/bin && \
+    rosa version
+
+RUN curl -L "https://mirror.openshift.com/pub/openshift-v4/clients/odo/${ODO_VERSION}/odo-linux-amd64" -o /usr/local/bin/odo && \
+    chmod +x /usr/local/bin/odo && \
+    odo version --client
+
+RUN curl -L "https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64" -o /usr/local/bin/jq  && \
+    chmod +x /usr/local/bin/jq && \
+    jq --version
+
+RUN curl -L "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64" -o /usr/local/bin/yq && \
+    chmod +x /usr/local/bin/yq && \
+    yq --version
+
+RUN curl -L "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" -o /tmp/helm.tar.gz && \
+    tar -xzf /tmp/helm.tar.gz && \
+    mv linux-amd64/helm /usr/local/bin/helm && \
+    helm version
+
+RUN curl -L "https://github.com/tektoncd/cli/releases/download/${TEKTON_VERSION}/tkn_${TEKTON_VERSION//v}_Linux_x86_64.tar.gz" -o /tmp/tkn.tar.gz && \
+    tar --no-same-owner -xzf /tmp/tkn.tar.gz && \
+    mv tkn /usr/local/bin && \
+    tkn version
+
+# additional tools - https://github.com/rht-labs/enablement-framework/blob/main/codereadyworkspaces/stack/Dockerfile
+
+# kubeseal
+RUN curl -sL https://github.com/bitnami-labs/sealed-secrets/releases/download/v${KUBESEAL_VERSION}/kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz | tar --no-same-owner -xzf - -C /usr/local/bin kubeseal && \
+    chmod -R 755 /usr/local/bin/kubeseal && \
+    echo "🦭🦭🦭🦭🦭"
+
+# pants hack 🩲
+RUN curl -o /usr/share/backgrounds/xfce/xfce-shapes.svg https://icanbecreative.com/res/freeweb/2011/04/tml.png
+# RUN xfconf-query -c xfce4-desktop -p /backdrop/screen0/monitorVNC-0/workspace0/last-image -s file:///usr/share/backgrounds/xfce/pants.png
+
+ADD init-user.sh /user/abc/
