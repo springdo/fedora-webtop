@@ -1,0 +1,18 @@
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: {{ include "webtop.fullname" . }}
+  labels:
+    {{- include "webtop.labels" . | nindent 4 }}
+  annotations:
+    description: Route for Freewebtop server's HTTPS
+spec:
+  host: null
+  to:
+    kind: Service
+    name: {{ include "webtop.fullname" . }}
+  port:
+    targetPort: http
+  tls:
+    termination: edge
